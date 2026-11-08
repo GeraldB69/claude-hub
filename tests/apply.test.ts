@@ -318,8 +318,36 @@ describe("applyCommand", () => {
 
     launches = [];
     fake.writeFile(".claude/plugins/installed_plugins.json", "pas du json");
-    run(["site"]);
+    const { errors } = run(["site"]);
     expect(launches).toHaveLength(2);
+    expect(errors).toContain("installed_plugins.json n'est pas du JSON valide");
+  });
+
+  test("stays silent when installed_plugins.json does not exist", () => {
+    const { errors } = run(["site"]);
+
+    expect(errors).toBe("");
+    expect(launches).toHaveLength(2);
+  });
+
+  test("re-enables an installed plugin that the project has switched off", () => {
+    fake.writeFile(
+      ".claude/plugins/installed_plugins.json",
+      JSON.stringify({
+        plugins: {
+          "ctx@market": [{ scope: "project", projectPath: project }],
+          "other@market": [{ scope: "project", projectPath: project }],
+        },
+      })
+    );
+    mkdirSync(join(project, ".claude"));
+    writeFileSync(settingsPath(), JSON.stringify({ enabledPlugins: { "ctx@market": false } }));
+
+    const { code } = run(["site"]);
+
+    expect(code).toBe(0);
+    expect(launches).toEqual([]);
+    expect(settings()).toMatchObject({ enabledPlugins: { "ctx@market": true, "other@market": true } });
   });
 
   test("recognises an installed plugin whose registered path has a trailing slash", () => {

@@ -20,32 +20,48 @@ const canonicalPath = (path: string): string => {
   }
 };
 
+export interface InstalledPlugins {
+  readonly ids: ReadonlySet<string>;
+  /** Présent si le fichier existe mais n'a pas pu être lu : l'appelant doit le dire. */
+  readonly warning?: string;
+}
+
 /**
  * Plugins enregistrés au scope `project` pour ce projet précis dans `installed_plugins.json` (un plugin au scope
- * `local` n'apparaît pas dans le `.claude/settings.json` versionné, il ne compte pas). Si le fichier est absent
- * ou illisible, on ne sait rien : liste vide, donc `apply` installe tout (idempotent côté claude).
+ * `local` n'apparaît pas dans le `.claude/settings.json` versionné, il ne compte pas). Fichier absent : aucun
+ * plugin. Fichier illisible : aucun plugin et un `warning`, donc `apply` installe tout (idempotent côté claude).
  */
-export function pluginsInstalledAt(home: string, projectDir: string): ReadonlySet<string> {
+export function pluginsInstalledAt(home: string, projectDir: string): InstalledPlugins {
   const target = canonicalPath(projectDir);
+  let text: string;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(join(home, ".claude/plugins/installed_plugins.json"), "utf8"));
-    const plugins = isRecord(parsed) && isRecord(parsed["plugins"]) ? parsed["plugins"] : {};
-    return new Set(
-      Object.entries(plugins).flatMap(([id, entries]) =>
-        Array.isArray(entries) && entries.some(
-          (entry: unknown) =>
-            isRecord(entry) &&
-            entry["scope"] === "project" &&
-            typeof entry["projectPath"] === "string" &&
-            canonicalPath(entry["projectPath"]) === target
-        )
-          ? [id]
-          : []
-      )
-    );
-  } catch {
-    return new Set();
+    text = readFileSync(join(home, ".claude/plugins/installed_plugins.json"), "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return { ids: new Set() };
+    }
+    return { ids: new Set(), warning: `installed_plugins.json illisible (${(error as Error).message})` };
   }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return { ids: new Set(), warning: "installed_plugins.json n'est pas du JSON valide" };
+  }
+  const plugins = isRecord(parsed) && isRecord(parsed["plugins"]) ? parsed["plugins"] : {};
+  const ids = Object.entries(plugins).flatMap(([id, entries]) =>
+    Array.isArray(entries) &&
+    entries.some(
+      (entry: unknown) =>
+        isRecord(entry) &&
+        entry["scope"] === "project" &&
+        typeof entry["projectPath"] === "string" &&
+        canonicalPath(entry["projectPath"]) === target
+    )
+      ? [id]
+      : []
+  );
+  return { ids: new Set(ids) };
 }
 
 export const GITIGNORE_ENTRY = ".claude/settings.local.json";

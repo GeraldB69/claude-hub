@@ -170,7 +170,10 @@ export function applyCommand(argv: readonly string[], env: Env, io: Io, runtime:
     const patch = settingsPatchOf(profile);
     const settings = inspectSettings(projectDir, patch);
     const installed = pluginsInstalledAt(env.home, projectDir);
-    const toInstall = profile.plugins.filter((id) => !installed.has(id));
+    if (installed.warning !== undefined) {
+      io.err(`ch apply : ${installed.warning} ; tous les plugins du profil seront (ré)installés.`);
+    }
+    const toInstall = profile.plugins.filter((id) => !installed.ids.has(id));
     if (toInstall.length > 0 || settings.summary.length > 0) {
       assertWritableForApply(settings.path, projectDir);
     }
