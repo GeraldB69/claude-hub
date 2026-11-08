@@ -69,12 +69,18 @@ function printPlan(
 
 /** Commandes à lancer après le déplacement, déduites de ce qui mentionne encore l'ancien chemin. */
 function printFollowUp(io: Io, plan: MovePlan): void {
-  const guide = planPostMove(plan.destination, plan.source);
+  let guide: ReturnType<typeof planPostMove>;
+  try {
+    guide = planPostMove(plan.destination, plan.source);
+  } catch (error) {
+    io.out(`Note : la recherche des références à l'ancien chemin a échoué (${reason(error)}) ; la faire à la main (par exemple avec grep -rIF).`);
+    return;
+  }
   if (guide.commands.length > 0) {
     io.out("Pour finir le déplacement, lancer ces commandes (ch ne les exécute pas) :");
     guide.commands.forEach((command) => io.out(command));
   } else if (guide.notes.length === 0) {
-    io.out("Aucune référence à l'ancien chemin trouvée dans le projet.");
+    io.out("Aucune référence à l'ancien chemin trouvée dans les fichiers texte examinés (hors dossiers ignorés comme node_modules).");
   }
   guide.notes.forEach((note) => io.out(`Note : ${note}`));
 }

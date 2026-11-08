@@ -71,15 +71,15 @@ function readTextFile(path: string, maxBytes: number): string | undefined {
 }
 
 /**
- * Cherche les mentions d'un chemin (la mention doit se terminer là : `/a/site-admin` ne compte pas pour
- * `/a/site`). Lecture seule, bornée ; `truncated` dit si la recherche s'est arrêtée avant la fin.
+ * Cherche les mentions d'un chemin (la mention doit commencer et se terminer là : `/a/site-admin` et `/x/a/site` ne comptent pas
+ * pour `/a/site`). Lecture seule, bornée ; `truncated` dit si la recherche s'est arrêtée avant la fin.
  */
 export function findReferences(
   root: string,
   needle: string,
   limits: ReferenceLimits = DEFAULT_LIMITS
 ): ReferenceSearch {
-  const pattern = new RegExp(`${escapeRegExp(needle)}(?![A-Za-z0-9_.-])`);
+  const pattern = new RegExp(`(?<![A-Za-z0-9_./-])${escapeRegExp(needle)}(?![A-Za-z0-9_.-])`);
   const hits: Reference[] = [];
   let visited = 0;
   let read = 0;

@@ -131,7 +131,7 @@ describe("moveCommand", () => {
 
     expect(code).toBe(0);
     expect(text).toContain("Pour finir le déplacement, lancer ces commandes");
-    expect(text).toContain("perl -pi -e");
+    expect(text).toContain("perl -pi.bak -e");
     expect(text).toContain(join(fixture.destination, "hooks.yml"));
     expect(readFileSync(join(fixture.destination, "hooks.yml"), "utf8")).toContain(fixture.source);
   });
