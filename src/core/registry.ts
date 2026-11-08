@@ -9,6 +9,8 @@ import { NAME_PATTERN } from "./profile.js";
 /** Nom de projet : comme un nom de profil, avec un `_` initial permis pour les projets d'outillage (`_engine`, `_config`). */
 const PROJECT_NAME_PATTERN = /^_?[a-z0-9][a-z0-9-]*$/;
 
+export const isValidProjectName = (name: string): boolean => PROJECT_NAME_PATTERN.test(name);
+
 export const REGISTRY_FILE_NAME = "projects.yaml";
 
 const entrySchema = z.strictObject({

@@ -18,7 +18,7 @@ import { projectKey } from "./project-key.js";
 import { singleLine } from "./printable.js";
 import { protectedReason } from "./protected.js";
 import { findReferences, IGNORED_DIRECTORIES } from "./references.js";
-import { loadRegistry, resolveProject, type Project } from "./registry.js";
+import { isValidProjectName, loadRegistry, resolveProject, type Project } from "./registry.js";
 import { isRecord } from "./settings.js";
 
 export interface SubfolderKey {
@@ -409,7 +409,9 @@ export function planMove(
   const realSource = realOf(source);
   const realRoot = realOf(root);
   const sameKey = oldKey.key === newKey.key;
-  const newName = project.name === basename(source) ? basename(destination) : project.name;
+  // Le nom suit le dossier seulement s'il reste un nom de registre valide ; sinon on garde l'ancien (comportement d'avant).
+  const folderName = basename(destination);
+  const newName = project.name === basename(source) && isValidProjectName(folderName) ? folderName : project.name;
 
   const problems = [
     ...(env.claudeConfigDir === undefined ? [] : ["CLAUDE_CONFIG_DIR est défini : l'organisation de ce dossier de configuration n'est pas vérifiée."]),

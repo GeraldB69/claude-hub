@@ -565,7 +565,9 @@ function manualHint(name: MoveStepName, plan: MovePlan, detail: string | undefin
         ? `Dans ${plan.claudeJsonPath}, renommer à la main la clé « ${plan.destination} » en « ${plan.source} » (ne PAS restaurer la sauvegarde : elle effacerait les modifications faites entre-temps par Claude).`
         : `Vérifier ${plan.claudeJsonPath} ; au besoin, le restaurer depuis la sauvegarde dans ${plan.backupDir}.`;
     case "registry":
-      return `Dans ${plan.registryPath}, remettre le chemin du projet « ${plan.project.name} » à sa valeur d'origine (sauvegarde dans ${plan.backupDir}).`;
+      return plan.newName === plan.project.name
+        ? `Dans ${plan.registryPath}, remettre le chemin du projet « ${plan.project.name} » à sa valeur d'origine (sauvegarde dans ${plan.backupDir}).`
+        : `Dans ${plan.registryPath}, remettre le nom « ${plan.project.name} » (au lieu de « ${plan.newName} ») et le chemin d'origine du projet (sauvegarde dans ${plan.backupDir}).`;
     case "backup":
       return "Aucune action.";
   }

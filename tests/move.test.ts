@@ -99,6 +99,18 @@ describe("moveCommand", () => {
     expect(readFileSync(fixture.registry, "utf8")).toContain("name: alias");
   });
 
+  test("keeps the old registry name when the destination folder is not a valid registry name, and still moves", () => {
+    const { code, text } = run(["site", "perso/Mon_Site", "--yes"]);
+
+    expect(code).toBe(0);
+    expect(text).not.toContain("nom site →");
+    expect(text).toContain("ch open site");
+    expect(existsSync(join(fake.home, "ws/perso/Mon_Site/file.txt"))).toBe(true);
+    const registry = readFileSync(fixture.registry, "utf8");
+    expect(registry).toContain("name: site");
+    expect(registry).toContain("path: perso/Mon_Site");
+  });
+
   test("refuses a rename that would collide with another project's name, and moves nothing", () => {
     writeFileSync(
       fixture.registry,
