@@ -19,6 +19,12 @@ describe("setProjectPath", () => {
     expect(result).toBe(SAMPLE.replace("/old/site", "perso/site"));
   });
 
+  test("renames the project too when a new name is given, keeping the rest of the line", () => {
+    const result = setProjectPath(SAMPLE, "site", "perso/vitrine", "vitrine");
+
+    expect(result).toBe(SAMPLE.replace("name: site, path: /old/site", "name: vitrine, path: perso/vitrine"));
+  });
+
   test("leaves every other project untouched", () => {
     const projects = parseRegistry(setProjectPath(SAMPLE, "tool", "labs/tool"), "/ws");
 

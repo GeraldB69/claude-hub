@@ -502,8 +502,12 @@ function rewriteClaudeJson(plan: MovePlan): StepOutcome {
 function verifyRegistryEdit(before: string, after: string, plan: MovePlan): void {
   try {
     const others = (text: string) =>
-      JSON.stringify(parseRegistry(text, plan.workspaceRoot).filter((project) => project.name !== plan.project.name));
-    const moved = parseRegistry(after, plan.workspaceRoot).find((project) => project.name === plan.project.name);
+      JSON.stringify(
+        parseRegistry(text, plan.workspaceRoot).filter(
+          (project) => project.name !== plan.project.name && project.name !== plan.newName
+        )
+      );
+    const moved = parseRegistry(after, plan.workspaceRoot).find((project) => project.name === plan.newName);
     if (moved?.path === plan.destination && others(before) === others(after)) {
       return;
     }
@@ -525,7 +529,7 @@ function rewriteRegistry(plan: MovePlan): StepOutcome {
   const before = original.toString("utf8");
   let next: string;
   try {
-    next = setProjectPath(before, plan.project.name, plan.newRegistryPath);
+    next = setProjectPath(before, plan.project.name, plan.newRegistryPath, plan.newName);
   } catch {
     throw new Refusal("REGISTRY_INVALID");
   }

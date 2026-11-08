@@ -75,6 +75,43 @@ describe("moveCommand", () => {
     expect(text).toContain("ch open site");
   });
 
+  test("renames the registry entry too when the project carried its folder's name, and says so", () => {
+    const { code, text } = run(["site", "perso/vitrine", "--yes"]);
+
+    expect(code).toBe(0);
+    expect(text).toContain("nom site → vitrine");
+    expect(text).toContain("ch open vitrine");
+    expect(text).not.toContain("ch open site");
+    const registry = readFileSync(fixture.registry, "utf8");
+    expect(registry).toContain("name: vitrine");
+    expect(registry).toContain("path: perso/vitrine");
+    expect(registry).not.toContain("name: site");
+  });
+
+  test("keeps a registry name that was not the folder's name", () => {
+    writeFileSync(fixture.registry, "projects:\n  - { name: alias, path: site, profile: base }\n");
+
+    const { code, text } = run(["alias", "perso/vitrine", "--yes"]);
+
+    expect(code).toBe(0);
+    expect(text).not.toContain("nom alias");
+    expect(text).toContain("ch open alias");
+    expect(readFileSync(fixture.registry, "utf8")).toContain("name: alias");
+  });
+
+  test("refuses a rename that would collide with another project's name, and moves nothing", () => {
+    writeFileSync(
+      fixture.registry,
+      "projects:\n  - { name: site, path: site, profile: base }\n  - { name: vitrine, path: autre, profile: base }\n"
+    );
+
+    const { code, errors } = run(["site", "perso/vitrine", "--yes"]);
+
+    expect(code).toBe(3);
+    expect(errors).toContain("« vitrine » est déjà pris");
+    expect(untouched()).toBe(true);
+  });
+
   test("refuses while a session runs in the project, lists the pid, and moves nothing", () => {
     processes = [{ pid: 4242, cwd: join(fixture.source, "sub"), ancestor: false }];
 

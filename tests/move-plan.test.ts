@@ -49,6 +49,7 @@ describe("planMove", () => {
       oldKey: key(source),
       newKey: key(destination),
       newRegistryPath: "perso/site",
+      newName: "site",
       projectsDir: join(fake.home, ".claude/projects"),
       claudeJsonPath: join(fake.home, ".claude.json"),
       registryPath: join(fake.home, "config/projects.yaml"),

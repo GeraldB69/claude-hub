@@ -49,6 +49,7 @@ export function createMoveFixture(fake: FakeHome): MoveFixture {
     registryPath: registry,
     workspaceRoot: join(fake.home, "ws"),
     newRegistryPath: "perso/site",
+    newName: "site",
     backupDir: join(fake.home, "state/backups"),
   };
   return { plan, source, destination, claudeJson, registry, projectsDir, originalClaudeJson, originalRegistry };

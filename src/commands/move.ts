@@ -57,6 +57,9 @@ function printPlan(
   io.out(`~ historique et mémoire : ${plan.oldKey} → ${plan.newKey}${extra} (${history})`);
   io.out(`~ ~/.claude.json : ${details.claudeJson}`);
   io.out(`~ registre : path → ${plan.newRegistryPath}`);
+  if (plan.newName !== plan.project.name) {
+    io.out(`~ registre : nom ${plan.project.name} → ${plan.newName}`);
+  }
   if (warnings.length > 0) {
     io.out("Avertissements :");
     warnings.forEach((warning) => io.out(`  - ${warning}`));
@@ -85,7 +88,7 @@ function printOutcome(io: Io, plan: MovePlan, result: MoveResult): number {
       `ATTENTION : ~/.claude.json n'a pas été modifié (${claudeJson.detail ?? "raison inconnue"}) : les autorisations et la confiance de ce projet restent attachées à l'ancien chemin et seront redemandées.`
     );
   }
-  io.out(`Projet déplacé. Le rouvrir avec : ch open ${plan.project.name}`);
+  io.out(`Projet déplacé. Le rouvrir avec : ch open ${plan.newName}`);
   io.out("Vérifier que la mémoire est retrouvée, puis corriger les références en dur signalées plus haut.");
   return EXIT_OK;
 }

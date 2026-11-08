@@ -1,10 +1,11 @@
 import { isMap, isSeq, parseDocument, YAMLParseError } from "yaml";
 
 /**
- * Change le chemin d'un projet dans le texte du registre en conservant commentaires, ordre et style du
- * fichier. Lève une erreur si le YAML est invalide (sans en citer d'extrait) ou si le projet est absent.
+ * Change le chemin d'un projet (et son nom, si `newName` est donné) dans le texte du registre en conservant
+ * commentaires, ordre et style du fichier. Lève une erreur si le YAML est invalide (sans en citer d'extrait)
+ * ou si le projet est absent.
  */
-export function setProjectPath(yamlText: string, name: string, newPath: string): string {
+export function setProjectPath(yamlText: string, name: string, newPath: string, newName?: string): string {
   const document = parseDocument(yamlText, { logLevel: "error" });
   const [firstError] = document.errors;
   if (firstError !== undefined) {
@@ -17,5 +18,8 @@ export function setProjectPath(yamlText: string, name: string, newPath: string):
     throw new Error(`Projet introuvable dans le registre : ${name}`);
   }
   entry.set("path", newPath);
+  if (newName !== undefined && newName !== name) {
+    entry.set("name", newName);
+  }
   return document.toString({ lineWidth: 0 });
 }

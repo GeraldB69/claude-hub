@@ -9,7 +9,7 @@ import {
   type Dirent,
   type Stats,
 } from "node:fs";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import { renameProjectKey } from "./claude-json.js";
 import { unusableReason } from "./file-state.js";
@@ -42,6 +42,11 @@ export interface MovePlan {
   readonly workspaceRoot: string;
   /** Chemin à inscrire dans le registre, relatif à la racine de travail. */
   readonly newRegistryPath: string;
+  /**
+   * Nom à inscrire dans le registre : celui du dossier de destination quand le projet portait le nom de son
+   * dossier (convention du registre), sinon le nom actuel.
+   */
+  readonly newName: string;
   readonly backupDir: string;
 }
 
@@ -404,6 +409,7 @@ export function planMove(
   const realSource = realOf(source);
   const realRoot = realOf(root);
   const sameKey = oldKey.key === newKey.key;
+  const newName = project.name === basename(source) ? basename(destination) : project.name;
 
   const problems = [
     ...(env.claudeConfigDir === undefined ? [] : ["CLAUDE_CONFIG_DIR est défini : l'organisation de ce dossier de configuration n'est pas vérifiée."]),
@@ -433,6 +439,9 @@ export function planMove(
           otherOwners(env, projects, project, source),
           "les deux projets partageraient le même historique."
         )),
+    ...(newName !== project.name && projects.some((other) => other.name === newName)
+      ? [`Le nom « ${newName} » est déjà pris dans le registre par un autre projet : choisir un autre dossier de destination.`]
+      : []),
     ...checkSessions(processes, source, realSource),
   ];
   if (problems.length > 0) {
@@ -458,6 +467,7 @@ export function planMove(
       registryPath: join(env.configDir, "projects.yaml"),
       workspaceRoot: root,
       newRegistryPath: relative(root, destination).split(sep).join("/"),
+      newName,
       backupDir: join(env.stateDir, "backups"),
     },
   };
