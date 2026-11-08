@@ -40,6 +40,7 @@ Sans compilation, `pnpm ch <commande>` lance directement les sources avec `tsx`.
 | `ch ls`                                     | Liste les projets du registre classés par dossier. Signale les dossiers introuvables et les dépôts git de la racine de travail absents du registre. `--json` pour un format machine. |
 | `ch init <projet>`                          | Prépare `.claude/settings.json`, `CLAUDE.md`, `docs/ai` et `.gitignore` d'un projet, sans écraser l'existant.                                                                      |
 | `ch apply <projet>`                         | Sauvegarde `.claude/settings.json`, installe les plugins du profil au niveau projet, puis fusionne les clés du profil dans le fichier. Le profil l'emporte sur une valeur contraire. |
+| `ch gc [--yes]`                             | Liste les versions de plugins du cache (`~/.claude/plugins/cache`) qu'aucune entrée de `installed_plugins.json` n'utilise. Ne supprime qu'avec `--yes`, et refuse si une autre session Claude est ouverte. Pas de sauvegarde : le cache se régénère à l'installation. Marketplaces et `plugins/data` intacts. |
 | `ch move <projet> <destination>`            | Déplace un projet en conservant la mémoire et l'historique de Claude Code. Affiche le plan, ne déplace qu'avec `--yes`, annule tout en cas d'échec.                                  |
 | `ch open <projet> [-- <arguments claude>]`  | Lance `claude` dans le dossier du projet (nom exact ou préfixe unique du registre). `--add-dir <projet>` ajoute un autre projet.                                                   |
 
@@ -111,7 +112,7 @@ TypeScript strict, Vitest. Un hook `.githooks/pre-commit` lance `gitleaks` sur l
 
 ## Statut
 
-Projet jeune, version `0.0.0`. `audit`, `ls`, `init`, `apply`, `move` et `open` sont disponibles. Les sauvegardes et restaurations (`backup`, `bootstrap`) et le nettoyage (`gc`) ne sont pas encore écrits.
+Projet jeune, version `0.0.0`. `audit`, `ls`, `init`, `apply`, `move`, `open` et `gc` sont disponibles. Volontairement non écrits : `backup` (archive chiffrée de la mémoire des projets, bloquée tant qu'un outil de chiffrement comme `age` n'est pas retenu) et `bootstrap` (remontage d'un poste neuf, qui n'a de sens qu'avec `backup`). À reprendre si le besoin se présente.
 
 ## Licence
 

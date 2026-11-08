@@ -17,7 +17,7 @@ const EXCLUDED_FILE = "cli.ts";
 
 const WRITER = "core/fs-safe.ts";
 const LAUNCHER = "core/process.ts";
-const WRITER_IMPORTERS: ReadonlySet<string> = new Set(["commands/init.ts", "commands/apply.ts", "commands/move.ts"]);
+const WRITER_IMPORTERS: ReadonlySet<string> = new Set(["commands/init.ts", "commands/apply.ts", "commands/move.ts", "commands/gc.ts"]);
 const LAUNCHER_IMPORTERS: ReadonlySet<string> = new Set([]);
 
 const READ_ONLY_FS: ReadonlySet<string> = new Set([

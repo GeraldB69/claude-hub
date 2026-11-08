@@ -204,3 +204,9 @@ Conséquences pour `ch` :
 - Il installe la version courante de la marketplace dans le cache (`plugins/cache/<marketplace>/<plugin>/<version>`), qui peut différer de la version installée au scope user, et met à jour la date `lastUpdated` de la marketplace dans `known_marketplaces.json`.
 - `claude plugin uninstall <id> --scope project` retire l'entrée de `installed_plugins.json` et laisse `enabledPlugins: {}` dans le `settings.json` du projet, mais **ne supprime pas** le dossier de cache de la version installée.
 - Sans `-y`, l'installation d'un plugin sans commande déclarée aboutit en non interactif ; `-y` est requis hors terminal seulement quand la marketplace déclare une commande, qu'il faut alors accepter explicitement.
+
+### 17 quater. Cache des plugins : versions en usage (observé, 2026-11-08)
+
+- Le cache est `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>`. Chaque entrée de `installed_plugins.json` a un `installPath` qui est exactement ce dossier de version.
+- Les versions absentes de `installed_plugins.json` restent sur le disque : désinstaller ou mettre à jour un plugin ne supprime pas l'ancienne version (voir 17 ter). `ch gc` s'appuie sur cette observation pour repérer les versions orphelines ; il refuse de rien supprimer si `installed_plugins.json` est illisible.
+- Non vérifié : si Claude Code lui-même nettoie un jour ces versions (le fichier `plugins/.last_inuse_sweep` existe, son rôle n'est pas documenté).

@@ -7,6 +7,8 @@ export type Operation =
   | { readonly kind: "append-line"; readonly path: string; readonly line: string }
   /** Copie un fichier existant dans `backupDir` sans le modifier ; sans effet s'il n'existe pas. */
   | { readonly kind: "backup"; readonly path: string; readonly backupDir: string }
+  /** Supprime un dossier (et son contenu) ; refuse un lien symbolique ou autre chose qu'un dossier. Sans sauvegarde : réservé à ce qui se régénère. */
+  | { readonly kind: "remove-tree"; readonly path: string }
   /** Fusionne le patch dans un JSON existant (créé s'il est absent) ; l'original est sauvegardé dans `backupDir` avant remplacement. */
   | {
       readonly kind: "merge-json";

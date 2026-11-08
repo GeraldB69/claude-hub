@@ -1,5 +1,6 @@
 import { applyCommand } from "./commands/apply.js";
 import { auditCommand } from "./commands/audit.js";
+import { gcCommand } from "./commands/gc.js";
 import { initCommand } from "./commands/init.js";
 import { lsCommand } from "./commands/ls.js";
 import { moveCommand } from "./commands/move.js";
@@ -28,6 +29,10 @@ const USAGE = [
   "      Déplace un projet du registre sous la racine de travail en conservant la mémoire et l'historique de",
   "      Claude Code. Affiche toujours le plan ; ne déplace qu'avec --yes. Refuse si une session Claude est",
   "      ouverte dans le projet. Tout est annulé en cas d'échec.",
+  "  ch gc [--yes]",
+  "      Liste les versions de plugins du cache (~/.claude/plugins/cache) qu'aucun plugin installé n'utilise.",
+  "      Ne supprime qu'avec --yes ; refuse si une autre session Claude est ouverte. Le cache se régénère à",
+  "      l'installation, donc aucune sauvegarde n'est faite.",
   "  ch open <projet> [--add-dir <projet>]... [--force] [-- <arguments de claude>]",
   "      Lance claude dans le dossier du projet (nom exact ou préfixe unique du registre).",
   "      Code de sortie : celui de claude (qui peut recouper 1 à 3) ; 126 ou 127 si claude ne peut pas être lancé.",
@@ -56,6 +61,8 @@ export function main(argv: readonly string[], env: Env, io: Io, runtime: Runtime
       return applyCommand(rest, env, io, runtime);
     case "move":
       return moveCommand(rest, env, io, runtime);
+    case "gc":
+      return gcCommand(rest, env, io, runtime);
     case "open":
       return openCommand(rest, env, io, runtime);
     default:

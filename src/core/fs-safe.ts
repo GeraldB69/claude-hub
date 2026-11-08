@@ -247,6 +247,17 @@ function applyOne(operation: Operation, root: string): OperationResult {
         const copy = backUp(readFileSync(operation.path), operation.path, operation.backupDir);
         return { operation, status: "done", backup: copy };
       }
+      case "remove-tree": {
+        const stats = lstatOrUndefined(operation.path);
+        if (stats === undefined) {
+          break;
+        }
+        if (!stats.isDirectory()) {
+          throw new Refusal("NOT_A_DIRECTORY");
+        }
+        rmSync(operation.path, { recursive: true });
+        break;
+      }
       case "merge-json": {
         const backup = mergeJson(operation.path, operation.patch, operation.backupDir);
         return backup === undefined ? { operation, status: "done" } : { operation, status: "done", backup };
