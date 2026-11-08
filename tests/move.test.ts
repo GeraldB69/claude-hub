@@ -124,6 +124,24 @@ describe("moveCommand", () => {
     expect(untouched()).toBe(true);
   });
 
+  test("after the move, gives the exact commands for what still mentions the old path, and runs none", () => {
+    writeFileSync(join(fixture.source, "hooks.yml"), `run: ${fixture.source}/x.sh\n`);
+
+    const { code, text } = run(["site", "perso/site", "--yes"]);
+
+    expect(code).toBe(0);
+    expect(text).toContain("Pour finir le déplacement, lancer ces commandes");
+    expect(text).toContain("perl -pi -e");
+    expect(text).toContain(join(fixture.destination, "hooks.yml"));
+    expect(readFileSync(join(fixture.destination, "hooks.yml"), "utf8")).toContain(fixture.source);
+  });
+
+  test("says when nothing mentions the old path after the move", () => {
+    const { text } = run(["site", "perso/site", "--yes"]);
+
+    expect(text).toContain("Aucune référence à l'ancien chemin trouvée");
+  });
+
   test("refuses while a session runs in the project, lists the pid, and moves nothing", () => {
     processes = [{ pid: 4242, cwd: join(fixture.source, "sub"), ancestor: false }];
 

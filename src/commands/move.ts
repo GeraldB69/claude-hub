@@ -3,6 +3,7 @@ import { parseArgs } from "node:util";
 import { EXIT_ERROR, EXIT_OK, EXIT_USAGE, type Env, type Io, type Runtime } from "../core/env.js";
 import { executeMove, type MoveResult, type MoveStepName } from "../core/fs-safe.js";
 import { planMove, type MovePlan } from "../core/move-plan.js";
+import { planPostMove } from "../core/post-move.js";
 import { describeDetail } from "../core/operations.js";
 
 interface MoveArgs {
@@ -66,6 +67,18 @@ function printPlan(
   }
 }
 
+/** Commandes à lancer après le déplacement, déduites de ce qui mentionne encore l'ancien chemin. */
+function printFollowUp(io: Io, plan: MovePlan): void {
+  const guide = planPostMove(plan.destination, plan.source);
+  if (guide.commands.length > 0) {
+    io.out("Pour finir le déplacement, lancer ces commandes (ch ne les exécute pas) :");
+    guide.commands.forEach((command) => io.out(command));
+  } else if (guide.notes.length === 0) {
+    io.out("Aucune référence à l'ancien chemin trouvée dans le projet.");
+  }
+  guide.notes.forEach((note) => io.out(`Note : ${note}`));
+}
+
 function printOutcome(io: Io, plan: MovePlan, result: MoveResult): number {
   result.steps.forEach((step) => {
     const detail = step.detail === undefined ? "" : ` (${describeDetail(step.detail)})`;
@@ -89,7 +102,8 @@ function printOutcome(io: Io, plan: MovePlan, result: MoveResult): number {
     );
   }
   io.out(`Projet déplacé. Le rouvrir avec : ch open ${plan.newName}`);
-  io.out("Vérifier que la mémoire est retrouvée, puis corriger les références en dur signalées plus haut.");
+  io.out("Vérifier que la mémoire est retrouvée.");
+  printFollowUp(io, plan);
   return EXIT_OK;
 }
 

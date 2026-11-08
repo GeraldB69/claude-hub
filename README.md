@@ -46,6 +46,8 @@ Sans compilation, `pnpm ch <commande>` lance directement les sources avec `tsx`.
 
 Codes de sortie : `0` succès, `1` écart détecté (`audit`), `2` erreur d'usage, `3` échec d'exécution. `ch open` retourne le code de `claude`, ou `126` / `127` si `claude` ne peut pas être lancé.
 
+Après un déplacement, `ch move` cherche ce qui mentionne encore l'ancien chemin (fichiers, hooks git, worktrees liés) et affiche les commandes exactes à lancer : `git worktree repair` pour les worktrees, un `perl -pi -e` pour les fichiers et hooks. Il ne les exécute pas ; si certains fichiers sont versionnés, relire le diff avant de commiter.
+
 `ch move` doit être lancé depuis un terminal ordinaire, jamais depuis une session Claude ouverte dans le projet : il refuse dans ce cas, car une session ouverte peut réécrire `~/.claude.json`.
 
 ## Configuration
