@@ -1,0 +1,16 @@
+# Exemple de profil pour un projet Next.js. Les plugins dépendent de votre poste : listez
+# ici des identifiants `plugin@marketplace` que vous avez vous-même validés.
+extends: base
+
+plugins: []
+
+claudeMd: |
+  # CLAUDE.md
+
+  Instructions pour Claude Code dans ce projet Next.js.
+
+  ## Commandes
+
+  ## Architecture
+
+  ## Conventions

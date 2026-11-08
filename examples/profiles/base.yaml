@@ -1,0 +1,5 @@
+# Profil de base générique : socle commun à étendre dans votre dépôt de configuration privé.
+# Copiez ce fichier dans <config>/profiles/ pour le personnaliser ; le dossier privé a priorité.
+
+# Désactive les connecteurs claude.ai (Gmail, Notion, …) dans le projet.
+connectors: disabled

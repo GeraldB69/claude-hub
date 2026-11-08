@@ -1,0 +1,30 @@
+{
+  "name": "claude-hub-engine",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "CLI pour garder propre et reproductible l'organisation Claude Code d'un poste.",
+  "type": "module",
+  "bin": { "ch": "./dist/cli.js" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "coverage": "vitest run --coverage",
+    "ch": "tsx src/cli.ts",
+    "check:all": "pnpm typecheck && pnpm test:run"
+  },
+  "packageManager": "pnpm@12.18.0",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.1.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  }
+}
