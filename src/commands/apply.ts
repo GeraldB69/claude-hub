@@ -4,7 +4,7 @@ import { parseArgs } from "node:util";
 import { EXIT_ERROR, EXIT_OK, EXIT_USAGE, type Env, type Io, type Runtime } from "../core/env.js";
 import { applyOperations } from "../core/fs-safe.js";
 import { describeDetail } from "../core/operations.js";
-import { assertWritableForApply, inspectSettings, type SettingsState } from "../core/plan.js";
+import { assertWritableForApply, inspectSettings, pluginsInstalledAt, type SettingsState } from "../core/plan.js";
 import type { Profile } from "../core/profile.js";
 import { settingsPatchOf, type SettingsPatch } from "../core/settings.js";
 import { resolveTarget, UsageError } from "../core/target.js";
@@ -22,6 +22,8 @@ interface Plan {
   readonly profile: Profile;
   readonly patch: SettingsPatch;
   readonly settings: SettingsState;
+  /** Plugins du profil encore à installer ; les autres le sont déjà dans ce projet. */
+  readonly toInstall: readonly string[];
   readonly yes: boolean;
   readonly backupDir: string;
 }
@@ -59,14 +61,18 @@ function printPlan(io: Io, plan: Plan, dryRun: boolean): void {
   io.out(
     `${dryRun ? "[simulation] Rien ne sera exécuté ni écrit. " : ""}Projet : ${plan.projectDir} (profil ${plan.profile.name})`
   );
-  if (plan.profile.plugins.length > 0) {
+  if (plan.toInstall.length > 0) {
     io.out("Note : claude installe au scope projet la version courante de la marketplace ; elle peut différer de la version installée au scope user.");
   }
-  if (plan.yes && plan.profile.plugins.length > 0) {
+  if (plan.yes && plan.toInstall.length > 0) {
     io.out("--yes : claude acceptera sans demander les commandes déclarées par les marketplaces.");
   }
   plan.profile.plugins.forEach((id) =>
-    io.out(`+ installer ${id} : claude ${installArguments(id, plan.yes).join(" ")}`)
+    io.out(
+      plan.toInstall.includes(id)
+        ? `+ installer ${id} : claude ${installArguments(id, plan.yes).join(" ")}`
+        : `= ${id} : déjà installé dans ce projet`
+    )
   );
   if (!drivesSettings(plan)) {
     io.out("= .claude/settings.json : le profil ne pilote aucune clé");
@@ -80,7 +86,7 @@ function printPlan(io: Io, plan: Plan, dryRun: boolean): void {
 
 /** Copie l'original avant que `claude` n'y touche, dès qu'il existe et que des plugins vont être installés. */
 function backUpBeforeInstall(io: Io, plan: Plan, progress: Progress): number | undefined {
-  if (plan.settings.existing === undefined || plan.profile.plugins.length === 0) {
+  if (plan.settings.existing === undefined || plan.toInstall.length === 0) {
     return undefined;
   }
   const [saved] = applyOperations([{ kind: "backup", path: plan.settings.path, backupDir: plan.backupDir }], {
@@ -106,7 +112,7 @@ function reportState(io: Io, progress: Progress): void {
 }
 
 function installPlugins(io: Io, runtime: Runtime, plan: Plan, progress: Progress): number | undefined {
-  for (const id of plan.profile.plugins) {
+  for (const id of plan.toInstall) {
     io.out(`→ claude ${installArguments(id, plan.yes).join(" ")}`);
     const code = runtime.launchClaude(plan.projectDir, installArguments(id, plan.yes));
     if (code !== 0) {
@@ -163,10 +169,12 @@ export function applyCommand(argv: readonly string[], env: Env, io: Io, runtime:
     const { projectDir, profile } = resolveTarget(env, query, args.profile);
     const patch = settingsPatchOf(profile);
     const settings = inspectSettings(projectDir, patch);
-    if (profile.plugins.length > 0 || settings.summary.length > 0) {
+    const installed = pluginsInstalledAt(env.home, projectDir);
+    const toInstall = profile.plugins.filter((id) => !installed.has(id));
+    if (toInstall.length > 0 || settings.summary.length > 0) {
       assertWritableForApply(settings.path, projectDir);
     }
-    const plan: Plan = { projectDir, profile, patch, settings, yes: args.yes === true, backupDir: join(env.stateDir, "backups") };
+    const plan: Plan = { projectDir, profile, patch, settings, toInstall, yes: args.yes === true, backupDir: join(env.stateDir, "backups") };
     const dryRun = args["dry-run"] === true;
     printPlan(io, plan, dryRun);
     if (dryRun) {

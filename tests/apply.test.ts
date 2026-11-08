@@ -289,6 +289,59 @@ describe("applyCommand", () => {
     ]);
   });
 
+  test("does not reinstall a plugin already installed for this project, but installs the others", () => {
+    fake.writeFile(
+      ".claude/plugins/installed_plugins.json",
+      JSON.stringify({
+        version: 2,
+        plugins: {
+          "ctx@market": [{ scope: "project", projectPath: project }],
+          "other@market": [{ scope: "project", projectPath: "/home/user/ailleurs" }],
+        },
+      })
+    );
+
+    const { code, text } = run(["site"]);
+
+    expect(code).toBe(0);
+    expect(launches).toEqual([{ cwd: project, args: installArgs("other@market") }]);
+    expect(text).toContain("= ctx@market : déjà installé dans ce projet");
+  });
+
+  test("a plugin registered at local scope, or with an unreadable registry, is still installed", () => {
+    fake.writeFile(
+      ".claude/plugins/installed_plugins.json",
+      JSON.stringify({ plugins: { "ctx@market": [{ scope: "local", projectPath: project }] } })
+    );
+    run(["site"]);
+    expect(launches.map((launch) => launch.args)).toEqual([installArgs("ctx@market"), installArgs("other@market")]);
+
+    launches = [];
+    fake.writeFile(".claude/plugins/installed_plugins.json", "pas du json");
+    run(["site"]);
+    expect(launches).toHaveLength(2);
+  });
+
+  test("recognises an installed plugin whose registered path has a trailing slash", () => {
+    fake.writeFile(
+      ".claude/plugins/installed_plugins.json",
+      JSON.stringify({
+        plugins: {
+          "ctx@market": [{ scope: "project", projectPath: `${project}/` }],
+          "other@market": [{ scope: "project", projectPath: project }],
+        },
+      })
+    );
+
+    const { code, text } = run(["site", "--dry-run"]);
+
+    expect(code).toBe(0);
+    expect(launches).toEqual([]);
+    expect(text).toContain("= ctx@market : déjà installé dans ce projet");
+    expect(text).toContain("= other@market : déjà installé dans ce projet");
+    expect(text).not.toContain("Note : claude installe");
+  });
+
   test("passes -y to claude only when --yes is given", () => {
     run(["site", "--yes"]);
 

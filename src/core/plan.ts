@@ -1,4 +1,4 @@
-import { accessSync, constants, lstatSync, readFileSync } from "node:fs";
+import { accessSync, constants, lstatSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 
 import type { Operation } from "./operations.js";
@@ -11,6 +11,42 @@ import {
   summarizeMerge,
   type SettingsPatch,
 } from "./settings.js";
+
+const canonicalPath = (path: string): string => {
+  try {
+    return realpathSync(path);
+  } catch {
+    return path.replace(/\/+$/, "");
+  }
+};
+
+/**
+ * Plugins enregistrés au scope `project` pour ce projet précis dans `installed_plugins.json` (un plugin au scope
+ * `local` n'apparaît pas dans le `.claude/settings.json` versionné, il ne compte pas). Si le fichier est absent
+ * ou illisible, on ne sait rien : liste vide, donc `apply` installe tout (idempotent côté claude).
+ */
+export function pluginsInstalledAt(home: string, projectDir: string): ReadonlySet<string> {
+  const target = canonicalPath(projectDir);
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(join(home, ".claude/plugins/installed_plugins.json"), "utf8"));
+    const plugins = isRecord(parsed) && isRecord(parsed["plugins"]) ? parsed["plugins"] : {};
+    return new Set(
+      Object.entries(plugins).flatMap(([id, entries]) =>
+        Array.isArray(entries) && entries.some(
+          (entry: unknown) =>
+            isRecord(entry) &&
+            entry["scope"] === "project" &&
+            typeof entry["projectPath"] === "string" &&
+            canonicalPath(entry["projectPath"]) === target
+        )
+          ? [id]
+          : []
+      )
+    );
+  } catch {
+    return new Set();
+  }
+}
 
 export const GITIGNORE_ENTRY = ".claude/settings.local.json";
 
