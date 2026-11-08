@@ -202,7 +202,7 @@ describe("gcCommand", () => {
     expect(existsSync(cache("m/a/0.9.0"))).toBe(true);
   });
 
-  test("stops on the first failure and says how many versions were left alone", () => {
+  test.skipIf(process.getuid?.() === 0)("stops on the first failure and says how many versions were left alone", () => {
     chmodSync(cache("gone/b"), 0o500);
     try {
       const { code, errors, text } = run(["--yes"]);
@@ -231,5 +231,28 @@ describe("gcCommand", () => {
     expect(attempt(cache("m/a/1.0.0/x.txt"))).toBe("NOT_A_DIRECTORY");
     expect(existsSync(join(outside, "keep.txt"))).toBe(true);
     expect(existsSync(cache("m/a/1.0.0/x.txt"))).toBe(true);
+  });
+
+  test("protects a version reached through a symbolic link, or one declared by a parent folder", () => {
+    fake.symlink("alias", cache("m/a/1.0.0"));
+    register(join(fake.home, "alias"));
+    expect(run(["--yes"]).code).toBe(0);
+    expect(existsSync(cache("m/a/1.0.0"))).toBe(true);
+    expect(existsSync(cache("m/a/0.9.0"))).toBe(false);
+
+    fake.writeFile(".claude/plugins/cache/n/p/1.0.0/x.txt", "x");
+    fake.writeFile(".claude/plugins/cache/n/p/2.0.0/x.txt", "x");
+    register(cache("n/p"));
+    run(["--yes"]);
+    expect(existsSync(cache("n/p/1.0.0"))).toBe(true);
+    expect(existsSync(cache("n/p/2.0.0"))).toBe(true);
+  });
+
+  test("keeps a version whose install path does not exist on disk yet", () => {
+    register(cache("m/a/0.9.0/not-created-yet"));
+
+    run(["--yes"]);
+
+    expect(existsSync(cache("m/a/0.9.0"))).toBe(true);
   });
 });

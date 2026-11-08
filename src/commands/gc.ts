@@ -76,8 +76,15 @@ export function gcCommand(argv: readonly string[], env: Env, io: Io, runtime: Ru
       return EXIT_ERROR;
     }
 
+    // Le plan a été calculé avant le contrôle des sessions : on le refait et on ne garde que les orphelins des deux.
+    const fresh = planGc(env.home);
+    if (fresh.status !== "ok") {
+      io.err("ch gc : l'état des plugins a changé pendant la vérification ; rien n'est supprimé.");
+      return EXIT_ERROR;
+    }
+    const stillOrphans = plan.orphans.filter((orphan) => fresh.orphans.some((other) => other.path === orphan.path));
     const results = applyOperations(
-      plan.orphans.map((orphan) => ({ kind: "remove-tree" as const, path: orphan.path })),
+      stillOrphans.map((orphan) => ({ kind: "remove-tree" as const, path: orphan.path })),
       { dryRun: false, root: plan.cacheRoot }
     );
     const skipped = results.filter((result) => result.status === "skipped").length;

@@ -28,6 +28,7 @@ function canonical(path: string): string {
     try {
       return join(realpathSync(existing), ...rest);
     } catch {
+      // Toute erreur (absent, droits, boucle) remonte à l'ancêtre : les deux côtés de la comparaison sont traités pareil.
       const parent = dirname(existing);
       if (parent === existing) {
         return absolute;
@@ -110,7 +111,9 @@ export function planGc(home: string): GcPlan {
     return { status: "unknown", cacheRoot, reason: used.reason };
   }
   const inUse = (version: string): boolean =>
-    used.paths.some((path) => path === version || path.startsWith(`${version}${sep}`));
+    used.paths.some(
+      (path) => path === version || path.startsWith(`${version}${sep}`) || version.startsWith(`${path}${sep}`)
+    );
 
   const orphans: OrphanVersion[] = [];
   let kept = 0;
