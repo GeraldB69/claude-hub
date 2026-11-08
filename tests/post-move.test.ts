@@ -53,7 +53,7 @@ describe("planPostMove", () => {
 
   test("gives the git command that repairs a linked worktree, run in the repository that owns it", () => {
     fake.writeFile("new/site/.worktrees/wt/.git", `gitdir: ${source}/.git/worktrees/wt\n`);
-    mkdirSync(join(destination, ".git"), { recursive: true });
+    mkdirSync(join(destination, ".git/worktrees/wt"), { recursive: true });
 
     const { commands } = planPostMove(destination, source);
 
@@ -62,7 +62,7 @@ describe("planPostMove", () => {
 
   test("uses the nested repository for a worktree of an app inside the project", () => {
     fake.writeFile("new/site/apps/todo/.worktrees/s1/.git", `gitdir: ${source}/apps/todo/.git/worktrees/s1\n`);
-    mkdirSync(join(destination, "apps/todo/.git"), { recursive: true });
+    mkdirSync(join(destination, "apps/todo/.git/worktrees/s1"), { recursive: true });
 
     const { commands } = planPostMove(destination, source);
 
@@ -136,7 +136,7 @@ describe("planPostMove, hostile or unusual projects", () => {
 
   test("keeps shell metacharacters of a gitdir literal", () => {
     const repository = fake.makeDir("outside/it's $(touch pwned)");
-    mkdirSync(join(repository, ".git"), { recursive: true });
+    mkdirSync(join(repository, ".git/worktrees/w"), { recursive: true });
     fake.writeFile("new/site/wt/.git", `gitdir: ${repository}/.git/worktrees/w\n`);
 
     const { commands } = planPostMove(destination, source);
@@ -172,6 +172,75 @@ describe("planPostMove, hostile or unusual projects", () => {
 
     expect(commands).toEqual([]);
     expect(notes.join(" ")).toContain("caractères spéciaux");
+  });
+});
+
+describe("planPostMove, cases found by the second review", () => {
+  let fake: FakeHome;
+  let source: string;
+  let destination: string;
+
+  beforeEach(() => {
+    fake = createFakeHome();
+    source = join(fake.home, "old/site");
+    destination = fake.makeDir("new/site");
+  });
+
+  afterEach(() => {
+    fake.cleanup();
+  });
+
+  test("never deletes or overwrites a .bak file that already exists", () => {
+    fake.writeFile("new/site/a.txt", `${source}\n`);
+    fake.writeFile("new/site/a.txt.bak", "precious\n");
+
+    const { commands, notes } = planPostMove(destination, source);
+
+    expect(commands).toEqual([]);
+    expect(notes.join(" ")).toContain("déjà un fichier .bak");
+    expect(readFileSync(join(destination, "a.txt.bak"), "utf8")).toBe("precious\n");
+  });
+
+  test("leaves a .bak that mentions the old path alone instead of rewriting it", () => {
+    fake.writeFile("new/site/old.log.bak", `${source}\n`);
+    fake.writeFile("new/site/a.txt", `${source}\n`);
+
+    const { commands, notes } = planPostMove(destination, source);
+
+    expect(commands[0]).not.toContain("old.log.bak");
+    expect(notes.join(" ")).toContain("old.log.bak");
+  });
+
+  test("is silent about a submodule with a relative gitdir and about a worktree that is already up to date", () => {
+    mkdirSync(join(destination, ".git/modules/lib"), { recursive: true });
+    fake.writeFile("new/site/lib/.git", "gitdir: ../.git/modules/lib\n");
+    mkdirSync(join(destination, ".git/worktrees/ok"), { recursive: true });
+    fake.writeFile("new/site/ok/.git", `gitdir: ${destination}/.git/worktrees/ok\n`);
+    fake.writeFile("new/site/.git/worktrees/ok/gitdir", `${destination}/ok/.git\n`);
+
+    expect(planPostMove(destination, source)).toEqual({ commands: [], notes: [] });
+  });
+
+  test("does not propose a repair for a worktree the repository does not know", () => {
+    mkdirSync(join(destination, ".git"), { recursive: true });
+    fake.writeFile("new/site/wt/.git", `gitdir: ${source}/.git/worktrees/ghost\n`);
+
+    const { commands, notes } = planPostMove(destination, source);
+
+    expect(commands).toEqual([]);
+    expect(notes.join(" ")).toContain("Worktrees non reconnus");
+  });
+
+  test("treats C1 controls and right-to-left marks as control characters", () => {
+    fake.writeFile("new/site/a\u202eb.txt", `${source}\n`);
+
+    expect(planPostMove(destination, source).commands).toEqual([]);
+  });
+
+  test("a hook that only mentions a look-alike path is not listed", () => {
+    fake.writeFile("new/site/.git/hooks/pre-commit", `${source}-admin/x\n`);
+
+    expect(planPostMove(destination, source)).toEqual({ commands: [], notes: [] });
   });
 });
 

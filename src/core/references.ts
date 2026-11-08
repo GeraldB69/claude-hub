@@ -74,12 +74,16 @@ function readTextFile(path: string, maxBytes: number): string | undefined {
  * Cherche les mentions d'un chemin (la mention doit commencer et se terminer là : `/a/site-admin` et `/x/a/site` ne comptent pas
  * pour `/a/site`). Lecture seule, bornée ; `truncated` dit si la recherche s'est arrêtée avant la fin.
  */
+/** Motif d'une mention de `needle` : elle ne doit être ni préfixée ni prolongée (`/x/a/site`, `/a/site-admin`). */
+export const mentionPattern = (needle: string): RegExp =>
+  new RegExp(`(?<![A-Za-z0-9_./-])${escapeRegExp(needle)}(?![A-Za-z0-9_.-])`);
+
 export function findReferences(
   root: string,
   needle: string,
   limits: ReferenceLimits = DEFAULT_LIMITS
 ): ReferenceSearch {
-  const pattern = new RegExp(`(?<![A-Za-z0-9_./-])${escapeRegExp(needle)}(?![A-Za-z0-9_.-])`);
+  const pattern = mentionPattern(needle);
   const hits: Reference[] = [];
   let visited = 0;
   let read = 0;

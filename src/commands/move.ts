@@ -80,7 +80,7 @@ function printFollowUp(io: Io, plan: MovePlan): void {
     io.out("Pour finir le déplacement, lancer ces commandes (ch ne les exécute pas) :");
     guide.commands.forEach((command) => io.out(command));
   } else if (guide.notes.length === 0) {
-    io.out("Aucune référence à l'ancien chemin trouvée dans les fichiers texte examinés (hors dossiers ignorés comme node_modules).");
+    io.out("Aucune référence à l'ancien chemin trouvée dans les fichiers texte examinés (hors dossiers ignorés comme node_modules, fichiers de plus de 1 Mo, hooks en lien et dépôts hors du projet).");
   }
   guide.notes.forEach((note) => io.out(`Note : ${note}`));
 }
